@@ -166,7 +166,7 @@ function fetchSol(sol) {
 			localFile += "/" + image.sol;
 			createIfNotExists(localFile);
 			
-			localFile += "/" + image.camera;
+			localFile += "/" + image.camera.id;
 			createIfNotExists(localFile);
 			
 			localFile += "/" + image.file;
