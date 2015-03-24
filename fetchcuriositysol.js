@@ -3,13 +3,15 @@ var
 	fs = require('fs'),
 	cheerio = require('cheerio'),
 	sizeOf = require('image-size');
+
 	
+http.globalAgent.maxSockets = 20;
+
 function fetchImage(host, uri, onsuccess) {
 	var options = {
 		hostname : host,
 		path : uri,
-		method : "GET",
-		agent: false
+		method : "GET"
 	};
 
 	var httpCallback = function(response) {
@@ -36,8 +38,7 @@ function fetchURL(host, uri, onsuccess) {
 	var options = {
 		hostname : host,
 		path : uri,
-		method : "GET",
-		agent: false
+		method : "GET"
 	};
 
 	var req = http.get(options, function(res) {
@@ -143,53 +144,71 @@ var cameras = [
 	{ name : "Mast Camera (Mastcam)", id : "MAST_" }
 ];
 
+function getCameraById(id) {
+	for (var i = 0; i < cameras.length; i++) {
+		if (cameras[i].id == id) {
+			return cameras[i];
+		}
+	}
+	return null;
+}
+
 function createIfNotExists(path) {
 	if (!fs.existsSync(path)) {
 		fs.mkdirSync(path);
 	}
 }
 
-function fetchSol(sol) {
-	fetchAllInstrumentsOnSol(sol, function(image) {
+var handleImageData = function(image) {
 		
-		var host = image.url.match(/http:\/\/[\w.]+[^\/]/)[0].replace(/http:\/\//, "");
-		var uri = image.url.replace(/http:\/\/[\w.]+[^\/]/, "")
-		fetchImage(host, uri, function(uri, data) {
-			var size = sizeOf(data);
-			image.width = size.width;
-			image.height = size.height;
-			image.type = size.type;
+	var host = image.url.match(/http:\/\/[\w.]+[^\/]/)[0].replace(/http:\/\//, "");
+	var uri = image.url.replace(/http:\/\/[\w.]+[^\/]/, "")
+	fetchImage(host, uri, function(uri, data) {
+		var size = sizeOf(data);
+		image.width = size.width;
+		image.height = size.height;
+		image.type = size.type;
+		
+		var localFile = "images";
+		createIfNotExists(localFile);
+		
+		localFile += "/" + image.sol;
+		createIfNotExists(localFile);
+		
+		localFile += "/" + image.camera.id;
+		createIfNotExists(localFile);
+		
+		localFile += "/" + image.file;
+		
+		fs.writeFile(localFile, data, function(err) {
+			if(err) {
+				return console.log(err);
+			}
 			
-			var localFile = "images";
-			createIfNotExists(localFile);
-			
-			localFile += "/" + image.sol;
-			createIfNotExists(localFile);
-			
-			localFile += "/" + image.camera.id;
-			createIfNotExists(localFile);
-			
-			localFile += "/" + image.file;
-			
-			fs.writeFile(localFile, data, function(err) {
-				if(err) {
-					return console.log(err);
-				}
-				
-				image.localFile = localFile;
-				console.info(image);
-			}); 
-			
-		});
+			image.localFile = localFile;
+			console.info(image);
+		}); 
 		
 	});
 }
 
+
+
 if (process.argv.length <= 2 || !process.argv[2].match(/^[0-9]+$/)) {
-	console.log("Missing of invalid sol specified");
+	console.log("Missing or invalid sol specified");
 } else {
-	console.info("Fetching all images on all instruments on sol " + process.argv[2]);
-	fetchSol(process.argv[2]);
+	
+	if (process.argv.length >= 4) {
+		var camera = getCameraById(process.argv[3]);
+		if (!camera) {
+			console.log("Invalid instrument id specified");
+		} else {
+			fetchInstrumentOnSol(process.argv[2], camera, handleImageData);
+		}
+	} else {
+		console.info("Fetching all images on all instruments on sol " + process.argv[2]);
+		fetchAllInstrumentsOnSol(process.argv[2], handleImageData);
+	}
 }
 
 //
