@@ -5,38 +5,6 @@ var
 	sizeOf = require('image-size'),
 	shared = require('./shared');
 
-	
-http.globalAgent.maxSockets = 20;
-
-function fetchImage(host, uri, onsuccess) {
-	var options = {
-		hostname : host,
-		path : uri,
-		method : "GET"
-	};
-
-	var httpCallback = function(response) {
-
-		var data = [];
-		response.on('data', function(chunk) {
-			data.push(chunk);
-		});
-		response.on('end', function() {
-			var buffer = Buffer.concat(data);
-			onsuccess(uri, buffer);
-		});
-		response.on('error', function(err) {
-			console.log("Failed to retrieve image at uri " + uri);
-			console.log(err);
-			//callbackError(err);
-		});			
-	};
-	
-	var req = http.get(options, httpCallback);
-	req.end();
-	
-}
-
 
 function fetchImageInfoPage(sol, camera, uri, onImageInfo) {
 	shared.getURL("mars.nasa.gov", uri, function(data) {
