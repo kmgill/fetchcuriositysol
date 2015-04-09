@@ -179,6 +179,9 @@ var handleImageData = function(image) {
 		var localFile = "images";
 		createIfNotExists(localFile);
 		
+		localFile += "/msl";
+		createIfNotExists(localFile);
+		
 		localFile += "/" + image.sol;
 		createIfNotExists(localFile);
 		
