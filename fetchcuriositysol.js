@@ -2,7 +2,8 @@ var
 	http = require('http'),
 	fs = require('fs'),
 	cheerio = require('cheerio'),
-	sizeOf = require('image-size');
+	sizeOf = require('image-size'),
+	shared = require('./shared');
 
 	
 http.globalAgent.maxSockets = 20;
@@ -35,34 +36,10 @@ function fetchImage(host, uri, onsuccess) {
 	req.end();
 	
 }
-	
-function fetchURL(host, uri, onsuccess) {
-	var options = {
-		hostname : host,
-		path : uri,
-		method : "GET"
-	};
-
-	var req = http.get(options, function(res) {
-		var data = "";
-		res.on('data', function(chunk) {
-			data += chunk;
-		});
-		res.on('end', function() {
-			onsuccess(data);
-		});
-		
-	}).on('error', function(e) {
-		console.log("headers: ", e);
-	});
-	req.end();
-	
-	
-}
 
 
 function fetchImageInfoPage(sol, camera, uri, onImageInfo) {
-	fetchURL("mars.nasa.gov", uri, function(data) {
+	shared.getURL("mars.nasa.gov", uri, function(data) {
 		var $ = cheerio.load(data);
 		var links = $('a').map(function(i) {
 			if ($(this).attr('href') && $(this).attr('href').match(/msl-raw-images/)) {
@@ -112,7 +89,7 @@ function fetchImageInfoPage(sol, camera, uri, onImageInfo) {
 function fetchInstrumentOnSol(sol, camera, onImageInfo) {
 	var uri = "/msl/multimedia/raw/?s=" + sol + "&camera=" + camera.id;
 	
-	fetchURL("mars.nasa.gov", uri, function(data) {
+	shared.getURL("mars.nasa.gov", uri, function(data) {
 		var $ = cheerio.load(data);
 	
 		var links = $('a').map(function(i) {
@@ -170,7 +147,7 @@ var handleImageData = function(image) {
 		
 	var host = image.url.match(/http:\/\/[\w.]+[^\/]/)[0].replace(/http:\/\//, "");
 	var uri = image.url.replace(/http:\/\/[\w.]+[^\/]/, "");
-	fetchImage(host, uri, function(uri, data) {
+	shared.getImage(host, uri, function(uri, data) {
 		var size = sizeOf(data);
 		image.width = size.width;
 		image.height = size.height;

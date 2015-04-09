@@ -1,9 +1,9 @@
 /** There is a newer version of this file. It will be added when I get to my other PC... */
 
 var 
-	http = require('http'),
 	fs = require('fs'),
-	spawn = require('child_process').spawn;
+	spawn = require('child_process').spawn,
+	shared = require('./shared');
 
 	
 http.globalAgent.maxSockets = 1;
@@ -21,33 +21,6 @@ var tiles = [
 ];
 
 
-function fetchImage(host, uri, onsuccess) {
-	var options = {
-		hostname : host,
-		path : uri,
-		method : "GET"
-	};
-
-	var httpCallback = function(response) {
-
-		var data = [];
-		response.on('data', function(chunk) {
-			data.push(chunk);
-		});
-		response.on('end', function() {
-			var buffer = Buffer.concat(data);
-			onsuccess(uri, buffer);
-		});
-		response.on('error', function(err) {
-			console.log(err);
-			//callbackError(err);
-		});			
-	};
-	
-	var req = http.get(options, httpCallback);
-	req.end();
-	
-}
 
 function prefixNumber(num) {
 	if (num <= 9) {
@@ -56,7 +29,6 @@ function prefixNumber(num) {
 		return num;
 	}
 }
-
 
 
 // montage -tile 2x1 -border 0 -geometry 512 2015-03-06-10-23.jpg 2015-03-06-10-24.jpg joined.jpg
@@ -107,8 +79,8 @@ function fetchTile(year, month, day, matrix, row, col, oncomplete) {
 	console.info(uri);
 	
 	var localFile = createLocalFileName(year, month, day, row, col);
-	
-	fetchImage(host, uri, function(uri, data) {
+
+	shared.getImage(host, uri, function(uri, data) {
 		
 		fs.writeFile(localFile, data, function(err) {
 			if(err) {
