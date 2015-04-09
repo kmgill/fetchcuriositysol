@@ -25,6 +25,8 @@ function fetchImage(host, uri, onsuccess) {
 			onsuccess(uri, buffer);
 		});
 		response.on('error', function(err) {
+			console.log("Failed to retrieve image at uri " + uri);
+			console.log(err);
 			//callbackError(err);
 		});			
 	};
@@ -119,8 +121,13 @@ function fetchInstrumentOnSol(sol, camera, onImageInfo) {
 			}
 		}).get();
 		
-		for (var i = 0; i < links.length; i++) {
-			fetchImageInfoPage(sol, camera, links[i], onImageInfo);
+		if (links.length == 0) {
+			console.info("No images for " + camera + " on Sol " + sol);
+		} else {
+			console.info("Fetching " + links.length + " images for Sol " + sol);
+			for (var i = 0; i < links.length; i++) {
+				fetchImageInfoPage(sol, camera, links[i], onImageInfo);
+			}
 		}
 	});
 }
@@ -162,7 +169,7 @@ function createIfNotExists(path) {
 var handleImageData = function(image) {
 		
 	var host = image.url.match(/http:\/\/[\w.]+[^\/]/)[0].replace(/http:\/\//, "");
-	var uri = image.url.replace(/http:\/\/[\w.]+[^\/]/, "")
+	var uri = image.url.replace(/http:\/\/[\w.]+[^\/]/, "");
 	fetchImage(host, uri, function(uri, data) {
 		var size = sizeOf(data);
 		image.width = size.width;
@@ -190,7 +197,7 @@ var handleImageData = function(image) {
 		}); 
 		
 	});
-}
+};
 
 
 
@@ -203,6 +210,7 @@ if (process.argv.length <= 2 || !process.argv[2].match(/^[0-9]+$/)) {
 		if (!camera) {
 			console.log("Invalid instrument id specified");
 		} else {
+			console.log("Fetching " + camera.id + " on Sol " + process.argv[2]);
 			fetchInstrumentOnSol(process.argv[2], camera, handleImageData);
 		}
 	} else {
