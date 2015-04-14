@@ -176,6 +176,54 @@ function fetchSet(year, month, day, satellite) {
 }
 //fetchSet(process.argv[2], process.argv[3], process.argv[4], process.argv[5]);
 
+function isNumber(val) {
+	if (val.match(/^[0-9]+$/)) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+function isBetweenInclusive(val, start, end) {
+	return (val >= start && val <= end);
+}
+
+var dt = new Date();
+var year = dt.getFullYear();
+var month = dt.getMonth() + 1;
+var day = dt.getDate();
+var satellite = "Terra";
+
+if (process.argv.length == 3) {
+	satellite = process.argv[2];
+}
+
+if (process.argv.length >= 5) {
+	year = process.argv[2];
+	month = process.argv[3];
+	day = process.argv[4];
+	satellite = (process.argv.length >= 6) ? process.argv[5] : satellite;
+}
+
+if (!isNumber(year) || !isBetweenInclusive(parseInt(year), 2000, dt.getFullYear())) {
+	console.info("Invalid year specified: " + year);
+} else if (!isNumber(month)) {
+	console.info("Invalid month specified: " + month);
+} else if (!isNumber(day)) {
+	console.info("Invalid day specified: " + day);
+} else {
+	console.info("Year: " + year);
+	console.info("Month: " + month);
+	console.info("Day: " + day);
+	console.info("Satellite: " + satellite);
+
+	fetchSet(year, month, day, satellite);
+}
+
+
+
+
+/*
 function fetchSetOnTimestamp(ts, satellite) {
 	var dt = new Date(ts);
 	fetchSet(dt.getFullYear(), dt.getMonth() + 1, dt.getDate(), satellite);
@@ -191,7 +239,7 @@ for (var ts = start; ts <= end; ts += (86400 * 1000)) {
 	//fetchSetOnTimestamp(ts, "Terra");
 	//break;
 }
-
+*/
 
 //fetchSetOnTimestamp(1426852800 * 1000);
 
