@@ -1,11 +1,9 @@
 var 
-	http = require('http'),
 	fs = require('fs'),
 	spawn = require('child_process').spawn,
 	shared = require('./shared');
 
-	
-http.globalAgent.maxSockets = 2;
+
 /*
 var matrix = 4;
 var tiles = [
@@ -46,34 +44,6 @@ var tiles = [
 ];
 */
 
-function fetchImage(host, uri, onsuccess) {
-	var options = {
-		hostname : host,
-		path : uri,
-		method : "GET"
-	};
-
-	var httpCallback = function(response) {
-
-		var data = [];
-		response.on('data', function(chunk) {
-			data.push(chunk);
-		});
-		response.on('end', function() {
-			var buffer = Buffer.concat(data);
-			onsuccess(uri, buffer);
-		});
-		response.on('error', function(err) {
-			console.log(err);
-			//callbackError(err);
-		});			
-	};
-	
-	var req = http.get(options, httpCallback);
-	req.end();
-	
-}
-
 function prefixNumber(num) {
 	if (num <= 9) {
 		return "0" + num;
@@ -88,17 +58,14 @@ function prefixNumber(num) {
 function assembleTiles(year, month, day, writeTo, satellite, onComplete) {
 	
 	var options = ['-tile', '40x20', '-border', '0', '-geometry', '512'];
-	
-	//var imgNames = "images/" + year + "-" + prefixNumber(year) + "-" + prefixNumber(month) + "-" + prefixNumber(day) + "*.jpg";
-	//options.push(imgNames);
-	
+
 	for (var i = 0; i < tiles.length; i++) {
 		var fileName = createLocalFileName(year, month, day, tiles[i][0], tiles[i][1], satellite);
 		options.push(fileName);
 	}
 	options.push(writeTo);
 	
-	var proc = spawn('montage', options);//, left, right, writeTo]);
+	var proc = spawn('montage', options);
 	
 	proc.stdout.setEncoding('utf8');
 	proc.stdout.on('data', function (data) {
@@ -135,7 +102,7 @@ function fetchTile(year, month, day, matrix, row, col, satellite, oncomplete) {
 	
 	var localFile = createLocalFileName(year, month, day, row, col, satellite);
 	
-	fetchImage(host, uri, function(uri, data) {
+	shared.getImage(host, uri, function(uri, data) {
 		
 		fs.writeFile(localFile, data, function(err) {
 			if(err) {
@@ -218,10 +185,10 @@ var start = 1420113600 * 1000;
 //var start = 1332849600 * 1000;
 //var end = 1426852800 * 1000;
 var end = 1427544000 * 1000;
-//fetchSetOnTimestamp(1427544000 * 1000);
+fetchSetOnTimestamp(1427544000 * 1000, "Aqua");
 for (var ts = start; ts <= end; ts += (86400 * 1000)) {
-	fetchSetOnTimestamp(ts, "Aqua");
-	fetchSetOnTimestamp(ts, "Terra");
+	//fetchSetOnTimestamp(ts, "Aqua");
+	//fetchSetOnTimestamp(ts, "Terra");
 	//break;
 }
 
