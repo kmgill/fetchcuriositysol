@@ -81,7 +81,7 @@ function assembleTiles(year, month, day, writeTo, satellite, onComplete) {
 }
 
 function createLocalFileName(year, month, day, row, col, satellite) {
-	var localFile = "images/" + year + "-" + 
+	var localFile = "images/gibs/" + year + "-" + 
 				prefixNumber(month) + "-" + 
 				prefixNumber(day) + "-" + 
 				row + "-" +
@@ -143,7 +143,7 @@ var onDateCompletion = function(year, month, day, satellite) {
 	console.info("Is complete: " + key);
 	
 
-	var writeTo = "images/" + year + "-" + 
+	var writeTo = "images/gibs/" + year + "-" + 
 				prefixNumber(month) + "-" + 
 				prefixNumber(day) + "-" + 
 				satellite + ".jpg";
