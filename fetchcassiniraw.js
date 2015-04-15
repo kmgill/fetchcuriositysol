@@ -64,12 +64,12 @@ function fetchThumbnailPage(host, uri) {
 		
 		var images = $('img').map(function(i) {
 			var src = $(this).attr('src');
-			if (src.match(/(casJPGBrowseS88)/)) {
+			if (src.match(/(casJPGBrowse)/)) {
 				return src;
 			}
 		}).get();
 		
-		var imageUri = images[0].replace("casJPGBrowseS88", "casJPGFullS88").replace("../../../", "/");
+		var imageUri = images[0].replace("casJPGBrowse", "casJPGFull").replace("../../../", "/");
 		var fileName = imageUri.substring(imageUri.lastIndexOf("/")+1);
 		props.fileId = fileName.substring(0, fileName.indexOf('.'));
 
@@ -87,7 +87,7 @@ function fetchPage(page) {
 	shared.getURL(host, "/photos/raw/?start="+page, function(data) {
 		
 		var $ = cheerio.load(data);
-		
+		http://saturn.jpl.nasa.gov/photos/raw/index.cfm?start=13&storedQ=2704981
 		var links = $('a').map(function(i) {
 			//http://saturn.jpl.nasa.gov/photos/raw/rawimagedetails/index.cfm?imageID=328271
 			if ($(this).attr('href') && $(this).attr('href').match(/index\.cfm\?imageID=/)) {
