@@ -11,7 +11,7 @@ function fetchImage(host, uri, props) {
 		
 		var size = sizeOf(data);
 		
-		var saveTo = props.fileId + "_" + 
+		var saveTo = props.fileId + "_" + props.camera + "_" +
 					props.pointedTowards + "_" +  
 					props.filter1 + "-" + props.filter2 + "_" + 
 					props.year + "-" + props.month + "-" + props.day + "_" + 
@@ -21,8 +21,11 @@ function fetchImage(host, uri, props) {
 		
 		props.fileName = saveTo;
 		
-		if (!fs.existsSync("images/cassini/" + saveTo)) {
-			fs.writeFile("images/cassini/" + saveTo, data, function(err) {
+		var dir = (props.camera == "N") ? "NAC" : "WAC";
+		
+		
+		if (!fs.existsSync("images/cassini/" + dir + "/" + saveTo)) {
+			fs.writeFile("images/cassini/" + dir + "/" + saveTo, data, function(err) {
 				if(err) {
 					return console.log(err);
 				}
@@ -71,8 +74,10 @@ function fetchThumbnailPage(host, uri) {
 		
 		var imageUri = images[0].replace("casJPGBrowse", "casJPGFull").replace("../../../", "/");
 		var fileName = imageUri.substring(imageUri.lastIndexOf("/")+1);
-		props.fileId = fileName.substring(0, fileName.indexOf('.'));
-
+		props.fileId = fileName.substring(1, fileName.indexOf('.'));
+	
+		props.camera = fileName.substring(0, 1);
+		
 		fetchImage(host, imageUri, props);
 		
 		
