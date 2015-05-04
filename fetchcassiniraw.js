@@ -107,9 +107,9 @@ function fetchPage(page) {
 	
 }
 
-fetchPage(1);
+
 // Full:  http://saturn.jpl.nasa.gov/multimedia/images/raw/casJPGFullS88/N00236254.jpg
 // Thumb: http://saturn.jpl.nasa.gov/multimedia/images/raw/casJPGThumbS88/N00236253.jpg
 for (var i = 1; i <= 17; i++) {
-	//fetchPage(i);
+	fetchPage(i);
 }
