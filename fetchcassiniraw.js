@@ -51,15 +51,14 @@ function fetchThumbnailPage(host, uri) {
 		props.day = takenOn.substring(takenOn.indexOf(" ") + 1, takenOn.indexOf(" ") + 3);
 		props.year = takenOn.substring(takenOn.lastIndexOf(" ")+1);
 
-		
 		props.pointedTowards = data.match(/ pointing toward .+[^,<\n]+/g)[0].substring(17);
 		props.pointedTowards = props.pointedTowards.substring(0, props.pointedTowards.indexOf(","));
-		//console.info(pointedTowards);
 		
-		var filters = data.match(/ [\w]{3} and [\w]{3} filters\./g);
+		var filters = data.match(/ [\w]{3,4} and [\w]{3,4} filters\./g);
 		if (filters && filters.length > 0) {
-			props.filter1 = filters[0].substring(1, 4);
-			props.filter2 = filters[0].substring(9, 12);
+			var filters = filters[0].trim().split(" ");
+			props.filter1 = filters[0];
+			props.filter2 = filters[2];
 		} else {
 			props.filter1 = "UNK";
 			props.filter2 = "UNK";
@@ -111,7 +110,6 @@ function fetchPage(page) {
 
 // Full:  http://saturn.jpl.nasa.gov/multimedia/images/raw/casJPGFullS88/N00236254.jpg
 // Thumb: http://saturn.jpl.nasa.gov/multimedia/images/raw/casJPGThumbS88/N00236253.jpg
-
 for (var i = 1; i <= 17; i++) {
 	fetchPage(i);
 }
