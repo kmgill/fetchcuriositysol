@@ -27,7 +27,8 @@ function fetchThumbnailPage(host, uri, oncomplete) {
 
 		props.pointedTowards = data.match(/ pointing toward .+[^,<\n]+/g)[0].substring(17);
 		props.pointedTowards = props.pointedTowards.substring(0, props.pointedTowards.indexOf(","));
-		if (props.pointedTowards.indexOf(" at approx")) {
+		
+		if (props.pointedTowards.indexOf(" at approx") >= 0) {
 			props.pointedTowards = props.pointedTowards.substring(0, props.pointedTowards.indexOf(" at approx"));
 		}
 		
