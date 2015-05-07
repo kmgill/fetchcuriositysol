@@ -24,13 +24,13 @@ Images will be saved in the `images/<sol>/<instrument>/` directories within the 
 
 
 # fetchcassiniraw
-Fetches all available raw Cassini images. Has no command line options.
+Fetches all available raw Cassini images.
 
 ## Required Modules:
 * image-size
 
 ## Running
-`node fetchcassiniraw.js`
+`node fetchcassiniraw.js <storedQ>` - Will fetch all raw Cassini images. If the optional query number is specified, only those images will be fetched. 
 
 ## Output
 Images will be saved in the `images/cassini/<instrument>` directory, where the instrument is either NAC (narrow angle camera) or WAC (wide angle camera). 

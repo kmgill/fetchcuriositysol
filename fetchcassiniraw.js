@@ -5,39 +5,13 @@ var
 	sizeOf = require('image-size'),
 	shared = require('./shared');
 
-function fetchImage(host, uri, props) {
-	
+function fetchImage(host, uri, props, oncomplete) {
 	shared.getImage(host, uri, function(uri, data) {
-		
-		var size = sizeOf(data);
-		
-		var saveTo = props.fileId + "_" + props.camera + "_" +
-					props.pointedTowards + "_" +  
-					props.filter1 + "-" + props.filter2 + "_" + 
-					props.year + "-" + props.month + "-" + props.day + "_" + 
-					
-					size.width + "x" + size.height + 
-					".jpg";
-		
-		props.fileName = saveTo;
-		
-		var dir = (props.camera == "N") ? "NAC" : "WAC";
-		
-		
-		if (!fs.existsSync("images/cassini/" + dir + "/" + saveTo)) {
-			fs.writeFile("images/cassini/" + dir + "/" + saveTo, data, function(err) {
-				if(err) {
-					return console.log(err);
-				}
-				console.log("New Image: " + saveTo);
-			}); 
-		} else {
-			console.log("File Exists: " + saveTo);
-		}
+		oncomplete(data, props);
 	});
 }
 	
-function fetchThumbnailPage(host, uri) {
+function fetchThumbnailPage(host, uri, oncomplete) {
 
 	shared.getURL(host, uri, function(data) {
 		
@@ -53,6 +27,9 @@ function fetchThumbnailPage(host, uri) {
 
 		props.pointedTowards = data.match(/ pointing toward .+[^,<\n]+/g)[0].substring(17);
 		props.pointedTowards = props.pointedTowards.substring(0, props.pointedTowards.indexOf(","));
+		if (props.pointedTowards.indexOf(" at approx")) {
+			props.pointedTowards = props.pointedTowards.substring(0, props.pointedTowards.indexOf(" at approx"));
+		}
 		
 		var filters = data.match(/ [\w]{3,6} and [\w]{3,6} filters\./g);
 		if (filters && filters.length > 0) {
@@ -77,39 +54,75 @@ function fetchThumbnailPage(host, uri) {
 	
 		props.camera = fileName.substring(0, 1);
 		
-		fetchImage(host, imageUri, props);
-		
-		
+		oncomplete(imageUri, props);
 	});
-	
 }
 	
-function fetchPage(page) {
+function fetchPage(page, query) {
 	
 	var host = "saturn.jpl.nasa.gov";
 	
-	shared.getURL(host, "/photos/raw/?start="+page, function(data) {
+	var uri =  "/photos/raw/?start="+page;
+	
+	if (query) {
+		uri += "&storedQ=" + query;
+	}
+	
+	shared.getURL(host, uri, function(data) {
 		
 		var $ = cheerio.load(data);
-		http://saturn.jpl.nasa.gov/photos/raw/index.cfm?start=13&storedQ=2704981
+
 		var links = $('a').map(function(i) {
-			//http://saturn.jpl.nasa.gov/photos/raw/rawimagedetails/index.cfm?imageID=328271
 			if ($(this).attr('href') && $(this).attr('href').match(/index\.cfm\?imageID=/)) {
 				return "/photos/raw/" + $(this).attr('href');
 			}
 		}).get();
 		
 		for (var i = 0; i < links.length; i++) {
-			fetchThumbnailPage(host, links[i]);
+			fetchThumbnailPage(host, links[i], function(imageUri, props) {
+				fetchImage(host, imageUri, props, function(data, props) {
+					var size = sizeOf(data);
+		
+					var saveTo = props.fileId + "_" + props.camera + "_" +
+								props.pointedTowards + "_" +  
+								props.filter1 + "-" + props.filter2 + "_" + 
+								props.year + "-" + props.month + "-" + props.day + "_" + 
+								
+								size.width + "x" + size.height + 
+								".jpg";
+					
+					props.fileName = saveTo;
+					
+					var dir = (props.camera == "N") ? "NAC" : "WAC";
+					
+					if (!fs.existsSync("images/cassini/" + dir + "/" + saveTo)) {
+						fs.writeFile("images/cassini/" + dir + "/" + saveTo, data, function(err) {
+							if(err) {
+								return console.log(err);
+							}
+							console.log("New Image: " + saveTo);
+						}); 
+					} else {
+						console.log("File Exists: " + saveTo);
+					}
+				});
+				
+			});
 		}
 
 	});
 	
 }
 
-
 // Full:  http://saturn.jpl.nasa.gov/multimedia/images/raw/casJPGFullS88/N00236254.jpg
 // Thumb: http://saturn.jpl.nasa.gov/multimedia/images/raw/casJPGThumbS88/N00236253.jpg
+
+var query = null;
+
+if (process.argv.length >= 2) {
+	query = process.argv[2];
+}
+
 for (var i = 1; i <= 17; i++) {
-	fetchPage(i);
+	fetchPage(i, query);
 }
