@@ -4,45 +4,57 @@ var
 	shared = require('./shared');
 
 
-/*
-var matrix = 4;
-var tiles = [
-	[2, 3],
-	[2, 4],
-	[2, 5],
-	[2, 6],
-	[3, 3],
-	[3, 4],
-	[3, 5],
-	[3, 6]
-];
-*/
-var matrix = 5;
-var tiles = [];
-for (var r = 0; r <= 19; r++) {
-	for (var c = 0; c <= 39; c++) {
-		tiles.push([r, c]);
+	//http://www.nnvl.noaa.gov/Portal/Images/TRUE/TRUE.daily.20150519.color/2/3/0.png
+var servers = {
+	"gibs" : 
+		{ 
+			"name" : "gibs",
+			"host" : "map1.vis.earthdata.nasa.gov",
+			"uri" : "/wmts-geo/MODIS_{satellite}_CorrectedReflectance_TrueColor/default/{year}-{month}-{day}/EPSG4326_250m/{level}/{row}/{col}.jpg",
+			"satellites" : [{"name":"Terra", "adds":[]}, {"name":"Aqua", "adds":[]}],
+			"levels" : []
+		},
+	"nnvl" : 
+		{
+			"name" : "nnvl",
+			"host" : "www.nnvl.noaa.gov",
+			"uri" : "/Portal/Images/{satellite}/{satellite}.daily.{year}{month}{day}{add-0}/{level}/{col}/{row}.png",
+			"satellites" : [{"name":"TRUE", "adds":[".color"]}, {"name":"GOES", "adds":[]}],
+			"levels" : []
+		}
+};
+
+	
+function createLevel(matrix, rows, cols, uri) {
+	var level = {
+		matrix : matrix,
+		rows : rows,
+		columns : cols,
+		uri : uri,
+		tiles : []
+	};
+	for (var r = 0; r < rows; r++) {
+		for (var c = 0; c < cols; c++) {
+			level.tiles.push([r, c]);
+		}
 	}
+	return level;
 }
-/*
-var tiles = [
-	[0, 0],
-	[0, 1],
-	[0, 2],
-	[0, 3],
-	[0, 4],
-	[1, 0],
-	[1, 1],
-	[1, 2],
-	[1, 3],
-	[1, 4],
-	[2, 0],
-	[2, 1],
-	[2, 2],
-	[2, 3],
-	[2, 4]
-];
-*/
+
+servers.gibs.levels.push(createLevel(1, 1, 3, "EPSG4326_250m"));
+servers.gibs.levels.push(createLevel(2, 3, 5, "EPSG4326_250m"));
+servers.gibs.levels.push(createLevel(3, 5, 10, "EPSG4326_250m"));
+servers.gibs.levels.push(createLevel(4, 10, 20, "EPSG4326_250m"));
+servers.gibs.levels.push(createLevel(5, 20, 40, "EPSG4326_250m"));
+servers.gibs.levels.push(createLevel(6, 40, 80, "EPSG4326_250m"));
+
+servers.nnvl.levels.push(createLevel(0, 1, 1, "0"));
+servers.nnvl.levels.push(createLevel(1, 1, 2, "0"));
+servers.nnvl.levels.push(createLevel(2, 2, 4, "0"));
+servers.nnvl.levels.push(createLevel(3, 4, 8, "0"));
+servers.nnvl.levels.push(createLevel(4, 8, 16, "0"));
+servers.nnvl.levels.push(createLevel(5, 16, 32, "0"));
+servers.nnvl.levels.push(createLevel(6, 32, 64, "0"));
 
 function prefixNumber(num) {
 	if (num <= 9) {
@@ -55,12 +67,13 @@ function prefixNumber(num) {
 
 
 // montage -tile 2x1 -border 0 -geometry 512 2015-03-06-10-23.jpg 2015-03-06-10-24.jpg joined.jpg
-function assembleTiles(year, month, day, writeTo, satellite, onComplete) {
+function assembleTiles(year, month, day, level, writeTo, satellite, onComplete) {
 	
-	var options = ['-tile', '40x20', '-border', '0', '-geometry', '512'];
+	var dimensions = level.columns + "x" + level.rows;
+	var options = ['-tile', dimensions, '-border', '0', '-geometry', '512'];
 
-	for (var i = 0; i < tiles.length; i++) {
-		var fileName = createLocalFileName(year, month, day, tiles[i][0], tiles[i][1], satellite);
+	for (var i = 0; i < level.tiles.length; i++) {
+		var fileName = createLocalFileName(year, month, day, level.tiles[i][0], level.tiles[i][1], satellite);
 		options.push(fileName);
 	}
 	options.push(writeTo);
@@ -90,27 +103,44 @@ function createLocalFileName(year, month, day, row, col, satellite) {
 	return localFile;
 }
 
-function fetchTile(year, month, day, matrix, row, col, satellite, oncomplete) {
+
+function getSatelliteInfoFromServer(host, satellite) {
+	for (var i = 0; i < host.satellites.length; i++) {
+		if (host.satellites[i].name == satellite) {
+			return host.satellites[i];
+		}
+	}
+	return {"name":"default", "adds": []};
+}
+
+function fetchTile(year, month, day, level, row, col, host, satellite, oncomplete) {
 	
-	var host = "map1.vis.earthdata.nasa.gov";
-	var uri = "/wmts-geo/MODIS_" + satellite + "_CorrectedReflectance_TrueColor/default/" + 
-				year + "-" + 
-				prefixNumber(month) + "-" + 
-				prefixNumber(day) + "/EPSG4326_250m/" + matrix + "/" + row + "/" + col + ".jpg";
-	
-	console.info(uri);
-	
+	var satelliteInfo = getSatelliteInfoFromServer(host, satellite);
+	var uri = host.uri.replace(/{satellite}/g, satellite)
+						.replace(/{year}/g, year)
+						.replace(/{month}/g, prefixNumber(month))
+						.replace(/{day}/g, prefixNumber(day))
+						.replace(/{level}/g, level.matrix)
+						.replace(/{row}/g, row)
+						.replace(/{col}/g, col);
+								
+	for (var i = 0; i < 10; i++) {
+		var replace = "{add-" + i + "}";
+		var replaceWith = (satelliteInfo.adds.length > i) ? satelliteInfo.adds[i] : "";
+		uri = uri.replace(replace, replaceWith);
+	}
+
 	var localFile = createLocalFileName(year, month, day, row, col, satellite);
 	
-	shared.getImage(host, uri, function(uri, data) {
+	shared.getImage(host.host, uri, function(uri, data) {
 		
 		fs.writeFile(localFile, data, function(err) {
 			if(err) {
 				return console.log(err);
 			}
-			console.info(localFile);
+			//console.info(localFile);
 			setOneComplete(year, month, day, satellite);
-			oncomplete(year, month, day, satellite);
+			oncomplete(year, month, day, satellite, level);
 		}); 
 	});
 }
@@ -126,17 +156,17 @@ function setOneComplete(year, month, day, satellite) {
 	completionMap[key]++;
 }
 
-function isComplete(year, month, day, satellite) {
+function isComplete(year, month, day, satellite, level) {
 	var key = year + "-" + month + "-" + day + "-" + satellite;
-	if (completionMap[key] && completionMap[key] == tiles.length) {
+	if (completionMap[key] && completionMap[key] == level.tiles.length) {
 		return true;
 	} else {
 		return false;
 	}
 }
 
-var onDateCompletion = function(year, month, day, satellite) {
-	if (!isComplete(year, month, day, satellite)) {
+var onDateCompletion = function(year, month, day, satellite, level) {
+	if (!isComplete(year, month, day, satellite, level)) {
 		return;
 	}
 	var key = year + "-" + month + "-" + day;
@@ -148,33 +178,26 @@ var onDateCompletion = function(year, month, day, satellite) {
 				prefixNumber(day) + "-" + 
 				satellite + ".jpg";
 				
-	assembleTiles(year, month, day, writeTo, satellite, function() {
-		for (var i = 0; i < tiles.length; i++) {
-			var fileName = createLocalFileName(year, month, day, tiles[i][0], tiles[i][1], satellite);
+	assembleTiles(year, month, day, level, writeTo, satellite, function() {
+		for (var i = 0; i < level.tiles.length; i++) {
+			var fileName = createLocalFileName(year, month, day, level.tiles[i][0], level.tiles[i][1], satellite);
 			fs.unlink(fileName);
 		}
 	});
 }
 
 
-
-// New England: Matrix 5, 10/23 10/24
-// US: Matrix 4, 2/3
-function fetchSet(year, month, day, satellite) {
+function fetchSet(year, month, day, host, satellite, level) {
 	var writeTo = "images/" + year + "-" + 
 				prefixNumber(month) + "-" + 
 				prefixNumber(day) + ".jpg";
-	//if (fs.exists(writeTo)) {
-	//	return;
-	//}
 	
-	for (var i = 0; i < tiles.length; i++) {
-		var tile = tiles[i];
-		fetchTile(year, month, day, matrix, tile[0], tile[1], satellite, onDateCompletion);
+	for (var i = 0; i < level.tiles.length; i++) {
+		var tile = level.tiles[i];
+		fetchTile(year, month, day, level, tile[0], tile[1], host, satellite, onDateCompletion);
 	}
 	
 }
-//fetchSet(process.argv[2], process.argv[3], process.argv[4], process.argv[5]);
 
 function isNumber(val) {
 	if (val.match(/^[0-9]+$/)) {
@@ -188,59 +211,47 @@ function isBetweenInclusive(val, start, end) {
 	return (val >= start && val <= end);
 }
 
-var dt = new Date();
-var year = dt.getFullYear();
-var month = dt.getMonth() + 1;
-var day = dt.getDate();
-var satellite = "Terra";
 
-if (process.argv.length == 3) {
-	satellite = process.argv[2];
-}
-
-if (process.argv.length >= 5) {
-	year = process.argv[2];
-	month = process.argv[3];
-	day = process.argv[4];
-	satellite = (process.argv.length >= 6) ? process.argv[5] : satellite;
-}
-
-if (!isNumber(year) || !isBetweenInclusive(parseInt(year), 2000, dt.getFullYear())) {
-	console.info("Invalid year specified: " + year);
-} else if (!isNumber(month)) {
-	console.info("Invalid month specified: " + month);
-} else if (!isNumber(day)) {
-	console.info("Invalid day specified: " + day);
-} else {
-	console.info("Year: " + year);
-	console.info("Month: " + month);
-	console.info("Day: " + day);
-	console.info("Satellite: " + satellite);
-
-	fetchSet(year, month, day, satellite);
+function createDefaultRunConfig() {
+	var dt = new Date();
+	var config = {
+		host : "gibs",
+		year : dt.getFullYear(),
+		month : (dt.getMonth() + 1),
+		day : dt.getDate(),
+		satellite : "Terra",
+		level : 2
+	};
+	return config;
 }
 
 
+var runConfig = createDefaultRunConfig();
 
-
-/*
-function fetchSetOnTimestamp(ts, satellite) {
-	var dt = new Date(ts);
-	fetchSet(dt.getFullYear(), dt.getMonth() + 1, dt.getDate(), satellite);
-	//while(!isComplete(dt.getFullYear(), dt.getMonth() + 1, dt.getDate()));
+// Some rather basic command line arg processing
+for (var i = 0; i < process.argv.length - 1; i++) {
+	switch (process.argv[i]) {
+	case "-l":	// Level
+		runConfig.level = (isNumber(process.argv[i + 1]) ? parseInt(process.argv[i + 1]) : runConfig.level);
+		break;
+	case "-y":	// Year
+		runConfig.year = (isNumber(process.argv[i + 1]) ? parseInt(process.argv[i + 1]) : runConfig.year);
+		break;
+	case "-m": // Month
+		runConfig.month = (isNumber(process.argv[i + 1]) ? parseInt(process.argv[i + 1]) : runConfig.month);
+		break;
+	case "-d": // Day
+		runConfig.day = (isNumber(process.argv[i + 1]) ? parseInt(process.argv[i + 1]) : runConfig.day);
+		break;
+	case "-s": // Satellite
+		runConfig.satellite = process.argv[i + 1];
+		break;
+	case "-h": // Host
+		runConfig.host = process.argv[i + 1];
+		break;
+	}
 }
-var start = 1420113600 * 1000;
-//var start = 1332849600 * 1000;
-//var end = 1426852800 * 1000;
-var end = 1427544000 * 1000;
-fetchSetOnTimestamp(1427544000 * 1000, "Aqua");
-for (var ts = start; ts <= end; ts += (86400 * 1000)) {
-	//fetchSetOnTimestamp(ts, "Aqua");
-	//fetchSetOnTimestamp(ts, "Terra");
-	//break;
-}
-*/
 
-//fetchSetOnTimestamp(1426852800 * 1000);
+// TODO: Some actual error checking
 
-//assembleTiles("images/2015-03-06-10-23.jpg", "images/2015-03-06-10-24.jpg", "images/2015-03-06.jpg");
+fetchSet(runConfig.year, runConfig.month, runConfig.day, servers[runConfig.host], runConfig.satellite, servers[runConfig.host].levels[runConfig.level]);
