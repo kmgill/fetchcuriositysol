@@ -39,7 +39,7 @@ function parseLevel1MetaFile(data) {
 	
 	for (var i = 0; i < lines.length; i++) {
 		var keyValuePair = lines[i].split(/=/);
-		if (keyValuePair[1] != undefined) {
+		if (keyValuePair[1] != undefined && keyValuePair[1].match(/[^\']+/) != null) {
 			keyValuePairs[keyValuePair[0]] = keyValuePair[1].match(/[^\']+/)[0];
 		}
 	}

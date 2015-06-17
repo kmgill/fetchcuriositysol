@@ -32,7 +32,7 @@ function fetchThumbnailPage(host, uri, oncomplete) {
 			props.pointedTowards = props.pointedTowards.substring(0, props.pointedTowards.indexOf(" at approx"));
 		}
 		
-		var filters = data.match(/ [\w]{3,6} and [\w]{3,6} filters\./g);
+		var filters = data.match(/ [\w]{2,6} and [\w]{2,6} filters\./g);
 		if (filters && filters.length > 0) {
 			var filters = filters[0].trim().split(" ");
 			props.filter1 = filters[0];
