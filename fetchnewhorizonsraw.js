@@ -154,7 +154,13 @@ function jpegUriToLevel1JpegUri(jpegUri) {
 }
 
 function saveData(data, path) {
-	fs.writeFile("images/newhorizons/" + path, data, function(err) {
+        var prefix = "images";
+        shared.createIfNotExists(prefix);
+        prefix += "/newhorizons";
+        shared.createIfNotExists("images/newhorizons");
+        prefix += "/"
+
+	fs.writeFile(prefix + path, data, function(err) {
 		if(err) {
 			return console.log(err);
 		}

@@ -79,6 +79,12 @@ function fetchPage(page, query) {
 			}
 		}).get();
 		
+                var prefix = "images";
+                shared.createIfNotExists(prefix);
+                prefix += "/cassini";
+                shared.createIfNotExists(prefix);
+                prefix += "/";
+
 		for (var i = 0; i < links.length; i++) {
 			fetchThumbnailPage(host, links[i], function(imageUri, props) {
 				fetchImage(host, imageUri, props, function(data, props) {
@@ -95,9 +101,10 @@ function fetchPage(page, query) {
 					props.fileName = saveTo;
 					
 					var dir = (props.camera == "N") ? "NAC" : "WAC";
+                                        shared.createIfNotExists(prefix + dir);
 					
-					if (!fs.existsSync("images/cassini/" + dir + "/" + saveTo)) {
-						fs.writeFile("images/cassini/" + dir + "/" + saveTo, data, function(err) {
+					if (!fs.existsSync(prefix + dir + "/" + saveTo)) {
+						fs.writeFile(prefix + dir + "/" + saveTo, data, function(err) {
 							if(err) {
 								return console.log(err);
 							}

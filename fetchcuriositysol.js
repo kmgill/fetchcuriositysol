@@ -105,12 +105,6 @@ function getCameraById(id) {
 	return null;
 }
 
-function createIfNotExists(path) {
-	if (!fs.existsSync(path)) {
-		fs.mkdirSync(path);
-	}
-}
-
 var handleImageData = function(image) {
 		
 	var host = image.url.match(/http:\/\/[\w.]+[^\/]/)[0].replace(/http:\/\//, "");
@@ -122,16 +116,16 @@ var handleImageData = function(image) {
 		image.type = size.type;
 		
 		var localFile = "images";
-		createIfNotExists(localFile);
+		shared.createIfNotExists(localFile);
 		
 		localFile += "/msl";
-		createIfNotExists(localFile);
+		shared.createIfNotExists(localFile);
 		
 		localFile += "/" + image.sol;
-		createIfNotExists(localFile);
+		shared.createIfNotExists(localFile);
 		
 		localFile += "/" + image.camera.id;
-		createIfNotExists(localFile);
+		shared.createIfNotExists(localFile);
 		
 		localFile += "/" + image.file;
 		
