@@ -5,6 +5,8 @@ Simple Node.js script to fetch raw images from MSL/Curiosity on a particular sol
 * cheerio
 * image-size
 
+Just run `npm install` to download and install these.
+
 ## Running
 `node fetchcuriosity.js <sol> <instrument>`
 
