@@ -60,8 +60,16 @@ var getURL = function(host, uri, onsuccess, onfailure) {
 	req.end();
 
 }
+
+var createIfNotExists = function(path) {
+        if (!fs.existsSync(path)) {
+                fs.mkdirSync(path);
+        }
+}
+
 	
 
 
 exports.getImage = getImage;
 exports.getURL = getURL;
+exports.createIfNotExists = createIfNotExists;
