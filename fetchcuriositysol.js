@@ -1,4 +1,4 @@
-var 
+var
 	http = require('http'),
 	fs = require('fs'),
 	cheerio = require('cheerio'),
@@ -15,7 +15,10 @@ function fetchImageInfoPage(sol, camera, uri, onImageInfo) {
 			}
 		}).get();
 		var imageUrl = links[0];
-		
+		if (imageUrl === undefined) {
+			return;
+		}
+
 		var alts = $('img').map(function(i) {
 			if ($(this).attr('src').match(/msl-raw-images/)) {
 				return $(this).attr('alt');
@@ -27,16 +30,16 @@ function fetchImageInfoPage(sol, camera, uri, onImageInfo) {
 		if (imageDate) {
 			imageDate = imageDate[0].substring(1, imageDate[0].length - 1);
 		}
-		
+
 		var desc = data.match(/This image .+[^<\n]+/g);
 		if (desc) {
 			desc = desc[0];
 		}
-		
+
 		var imageCredit = "NASA/JPL-Caltech/MSSS";
-		
+
 		var imageFile = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
-		
+
 		var image = {
 			url : imageUrl,
 			alt : alt,
@@ -47,7 +50,7 @@ function fetchImageInfoPage(sol, camera, uri, onImageInfo) {
 			sol : sol,
 			camera : camera
 		};
-		
+
 		if (onImageInfo) {
 			onImageInfo(image);
 		}
@@ -56,16 +59,16 @@ function fetchImageInfoPage(sol, camera, uri, onImageInfo) {
 
 function fetchInstrumentOnSol(sol, camera, onImageInfo) {
 	var uri = "/msl/multimedia/raw/?s=" + sol + "&camera=" + camera.id;
-	
+
 	shared.getURL("mars.nasa.gov", uri, function(data) {
 		var $ = cheerio.load(data);
-	
+
 		var links = $('a').map(function(i) {
 			if ($(this).attr('href') && $(this).attr('href').match(/.\/?rawid=/)) {
 				return $(this).attr('href').replace("./", "/msl/multimedia/raw/");
 			}
 		}).get();
-		
+
 		if (links.length == 0) {
 			console.info("No images for " + camera + " on Sol " + sol);
 		} else {
@@ -106,7 +109,7 @@ function getCameraById(id) {
 }
 
 var handleImageData = function(image) {
-		
+
 	var host = image.url.match(/http:\/\/[\w.]+[^\/]/)[0].replace(/http:\/\//, "");
 	var uri = image.url.replace(/http:\/\/[\w.]+[^\/]/, "");
 	shared.getImage(host, uri, function(uri, data) {
@@ -114,30 +117,30 @@ var handleImageData = function(image) {
 		image.width = size.width;
 		image.height = size.height;
 		image.type = size.type;
-		
+
 		var localFile = "images";
 		shared.createIfNotExists(localFile);
-		
+
 		localFile += "/msl";
 		shared.createIfNotExists(localFile);
-		
+
 		localFile += "/" + image.sol;
 		shared.createIfNotExists(localFile);
-		
+
 		localFile += "/" + image.camera.id;
 		shared.createIfNotExists(localFile);
-		
+
 		localFile += "/" + image.file;
-		
+
 		fs.writeFile(localFile, data, function(err) {
 			if(err) {
 				return console.log(err);
 			}
-			
+
 			image.localFile = localFile;
 			console.info(image);
-		}); 
-		
+		});
+
 	});
 };
 
@@ -146,7 +149,7 @@ var handleImageData = function(image) {
 if (process.argv.length <= 2 || !process.argv[2].match(/^[0-9]+$/)) {
 	console.log("Missing or invalid sol specified");
 } else {
-	
+
 	if (process.argv.length >= 4) {
 		var camera = getCameraById(process.argv[3]);
 		if (!camera) {
